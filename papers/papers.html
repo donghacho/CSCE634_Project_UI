@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ranked Papers</title>
+  <link rel="stylesheet" href="papers.css" />
+</head>
+<body>
+  <header>
+    <h1>Top-Ranked Papers</h1>
+  </header>
+
+  <main>
+    <div style="margin-bottom: 20px; text-align: right;">
+      Show per page:
+      <select id="pageSizeSelect">
+        <option value="20">20</option>
+        <option value="25">25</option>
+        <option value="30">30</option>
+        <option value="35">35</option> 
+        <option value="40">40</option>
+      </select>
+    </div>
+
+    <div id="papers-container"></div>
+    <div id="pagination" style="text-align:center; margin-top: 20px;"></div>
+  </main>
+
+  <script src="papers.js"></script>
+</body>
+</html>
