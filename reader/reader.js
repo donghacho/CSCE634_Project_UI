@@ -150,5 +150,5 @@ async function preloadPaperSummary(paperText) {
 
 async function loader() {
    let pdf = document.getElementById('pdf');
-   pdf.src = sessionStorage.getItem('activePdfUrl');
+   pdf.src = sessionStorage.getItem('activePdfUrl') + "#toolbar=0&navpanes=0&scrollbar=0";
 }

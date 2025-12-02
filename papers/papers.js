@@ -23,7 +23,7 @@ function renderPapers() {
 
     card.addEventListener('click', () => {
       sessionStorage.setItem('title', title);
-      sessionStorage.setItem('activePdfUrl', 'http://srv15-bcrec.in/vc/AQAR_2023-24/CRITERIA_3/3_3/3_3_3/ADDITIONAL_INFORMATION/conference/C01.pdf')
+      // sessionStorage.setItem('activePdfUrl', 'https://arxiv.org/pdf/2506.17894') we will populate the DOI/PDF links to view the paper here
       window.location.href = '/reader/reader.html';
     });
     container.appendChild(card);
