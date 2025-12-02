@@ -4,8 +4,8 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import fetch from "node-fetch"; // Needed for Node.js
 import axios from 'axios';
-import PDFParser from 'pdf2json';
 import { configDotenv } from "dotenv";
+import extract from 'pdf-text-extract';
 
 const app = express();
 const PORT = 3000;
@@ -21,26 +21,6 @@ if (!GEMINI_API_KEY) {
 
 app.use(cors());
 app.use(bodyParser.json());
-
-async function extractTextFromRemotePdf(url) {
-    const response = await axios.get(url, {
-        responseType: 'arraybuffer'
-    });
-    
-    const buffer = response.data;
-    const pdfParserInstance = new PDFParser(this, 1);
-
-    return new Promise((resolve, reject) => {
-        pdfParserInstance.on("pdfParser_dataReady", (pdfData) => {
-            resolve(pdfData.text); 
-        });        
-        pdfParserInstance.on("pdfParser_dataError", (errData) => {
-            console.error("PDF Parser Error:", errData.mainError);
-            reject(errData.mainError);
-        });
-        pdfParserInstance.parseBuffer(buffer);
-    });
-}
 
 app.post("/api/chat", async (req, res) => {
   const userMessage = req.body.message;
@@ -79,7 +59,7 @@ app.post("/api/chat", async (req, res) => {
 
 app.post("/api/inittrain", async (req, res) => {
     try {
-        let pdfText = await extractTextFromRemotePdf(req.body.message);
+        let pdfText = req.body.message;
 
         let prompt =
           `Summarize the following document so I can use the summary as context later:\n\n"""${pdfText}"""`;
