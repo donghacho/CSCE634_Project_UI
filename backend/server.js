@@ -7,8 +7,8 @@ import fetch from "node-fetch"; // Needed for Node.js
 const app = express();
 const PORT = 3000;
 
-// Your REAL Gemini API key
-const GEMINI_API_KEY = "AIzaSyDOXk7e29yYie0ltFvGmlnf6_LsG5JABrY";
+// Your Gemini API key
+const GEMINI_API_KEY = "HERE";
 
 app.use(cors());
 app.use(bodyParser.json());
