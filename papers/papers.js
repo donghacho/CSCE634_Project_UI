@@ -20,6 +20,12 @@ function renderPapers() {
     const card = document.createElement("div");
     card.className = "paper-card";
     card.textContent = title;
+
+    card.addEventListener('click', () => {
+      sessionStorage.setItem('title', title);
+      sessionStorage.setItem('activePdfUrl', 'http://srv15-bcrec.in/vc/AQAR_2023-24/CRITERIA_3/3_3/3_3_3/ADDITIONAL_INFORMATION/conference/C01.pdf')
+      window.location.href = '/reader/reader.html';
+    });
     container.appendChild(card);
   });
 

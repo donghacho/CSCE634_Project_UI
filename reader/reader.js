@@ -64,6 +64,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const chatPanel = document.getElementById("chat-panel");
   const resizer = document.getElementById("resizer");
 
+  loader();
+
   toggleBtn.addEventListener("click", function () {
     chatPanel.classList.toggle("hidden");
     resizer.classList.toggle("hidden");
@@ -144,4 +146,9 @@ async function preloadPaperSummary(paperText) {
     console.error("Error summarizing paper:", err);
     summaryResolve();
   }
+}
+
+async function loader() {
+   let pdf = document.getElementById('pdf');
+   pdf.src = sessionStorage.getItem('activePdfUrl');
 }
