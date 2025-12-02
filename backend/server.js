@@ -3,9 +3,8 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import fetch from "node-fetch"; // Needed for Node.js
-import axios from 'axios';
 import { configDotenv } from "dotenv";
-import extract from 'pdf-text-extract';
+import {marked} from 'marked'
 
 const app = express();
 const PORT = 3000;
@@ -24,7 +23,7 @@ app.use(bodyParser.json());
 
 app.post("/api/chat", async (req, res) => {
   const userMessage = req.body.message;
-  console.log("Received from frontend:", userMessage.substring(0, 50) + "..."); // Log a snippet
+  console.log("Received from frontend:", userMessage.substring(0, 100) + "..."); // Log a snippet
 
   try {
     const apiURL =
@@ -49,8 +48,8 @@ app.post("/api/chat", async (req, res) => {
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "[No reply received from Gemini]";
 
-    res.json({ reply });
-
+    const htmlReply =  marked.parse(reply);
+    res.json({ reply: htmlReply });
   } catch (err) {
     console.error("Backend Error in /api/chat:", err);
     res.status(500).json({ reply: "[Backend error while reaching Gemini API]" });
@@ -71,7 +70,6 @@ app.post("/api/inittrain", async (req, res) => {
         });
         const responseData = await response.json();
         res.status(response.status).json(responseData);
-
     } catch (error) {
         console.error("Error in /api/inittrain:", error);
         res.status(500).json({ reply: "Failed to process PDF or communicate with chat API." });
