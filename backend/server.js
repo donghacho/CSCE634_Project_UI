@@ -4,6 +4,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import fetch from "node-fetch"; // Needed for Node.js
 
+
 const app = express();
 const PORT = 3000;
 
@@ -12,6 +13,13 @@ const GEMINI_API_KEY = "HERE";
 
 app.use(cors());
 app.use(bodyParser.json());
+
+async function extractTextFromRemotePdf(url) {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const dataBuffer = response.data;
+    const data = await pdf(dataBuffer);
+    return data.text;
+}
 
 // API ENDPOINT
 app.post("/api/chat", async (req, res) => {
@@ -51,6 +59,20 @@ app.post("/api/chat", async (req, res) => {
     res.status(500).json({ reply: "[Backend error while reaching Gemini API]" });
   }
 });
+
+app.post("/api/inittrain", async (req, res) => {
+    url = extractTextFromRemotePdf(req.body.message)
+    const prompt =
+      `Summarize the following document so I can use the summary as context later:\n\n"""${url}"""`;
+
+    const response = await fetch("http://localhost:3000/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: prompt })
+    });
+
+    res.status(response.status).json(response.data);
+})
 
 // START SERVER
 app.listen(PORT, () => {

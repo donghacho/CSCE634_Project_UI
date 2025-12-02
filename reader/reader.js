@@ -1,3 +1,6 @@
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'mozilla.github.io';
+
+
 let preloadSummary = "";
 let hasInjectedSummary = false;
 
@@ -63,12 +66,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const toggleBtn = document.getElementById("toggle-chat");
   const chatPanel = document.getElementById("chat-panel");
   const resizer = document.getElementById("resizer");
+  const paperView = document.getElementById("paper-view");
 
   loader();
 
   toggleBtn.addEventListener("click", function () {
     chatPanel.classList.toggle("hidden");
     resizer.classList.toggle("hidden");
+    paperView.classList.toggle("scroll");
   });
 
   // Enable horizontal resizing
@@ -83,7 +88,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!isResizing) return;
 
     const container = document.querySelector(".container");
-    const paperView = document.getElementById("paper-view");
 
     const offsetRight = container.clientWidth - e.clientX;
     chatPanel.style.width = `${offsetRight}px`;
@@ -115,23 +119,21 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Auto read + summarize
-  const paperView = document.getElementById("paper-view");
   if (paperView) {
-    const paperText = paperView.innerText.trim();
+    const paperText = extractTextFromPdf();
     console.log("Auto-read content:", paperText.slice(0, 50) + "...");
-    preloadPaperSummary(paperText);
+    preloadPaperSummary();
   }
 });
 
-async function preloadPaperSummary(paperText) {
+async function preloadPaperSummary() {
   try {
-    const prompt =
-      `Summarize the following document so I can use the summary as context later:\n\n"""${paperText}"""`;
+    let url = sessionStorage.getItem('activePdfUrl');
 
-    const response = await fetch("http://localhost:3000/api/chat", {
+    const response = await fetch("http://localhost:3000/api/inittrain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt })
+      body: JSON.stringify({ message: url })
     });
 
     const data = await response.json();
