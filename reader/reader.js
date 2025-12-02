@@ -1,6 +1,3 @@
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'mozilla.github.io';
-
-
 let preloadSummary = "";
 let hasInjectedSummary = false;
 
@@ -120,9 +117,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Auto read + summarize
   if (paperView) {
-    const paperText = extractTextFromPdf();
-    console.log("Auto-read content:", paperText.slice(0, 50) + "...");
     preloadPaperSummary();
+    // console.log("Auto-read content:", preloadSummary);
   }
 });
 
@@ -135,6 +131,8 @@ async function preloadPaperSummary() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: url })
     });
+
+    console.log(response)
 
     const data = await response.json();
     preloadSummary = data.reply;
