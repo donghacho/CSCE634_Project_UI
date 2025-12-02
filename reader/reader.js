@@ -4,6 +4,7 @@ let hasInjectedSummary = false;
 // A promise we resolve once summary is ready
 let summaryResolve;
 let summaryReady = new Promise(res => summaryResolve = res);
+let pdfjsLib = null; // PDF.js library reference
 
 async function sendMessage() {
   // Wait until summary is actually loaded
@@ -50,7 +51,7 @@ async function sendMessage() {
     });
 
     const data = await response.json();
-    aiMsg.textContent = "AI: " + data.reply;
+    aiMsg.innerHTML = "AI: " + data.reply;
     chatBox.scrollTop = chatBox.scrollHeight;
 
   } catch (err) {
@@ -63,10 +64,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const toggleBtn = document.getElementById("toggle-chat");
   const chatPanel = document.getElementById("chat-panel");
   const resizer = document.getElementById("resizer");
+  const paperView = document.getElementById("paper-view");
+
+  loader();
 
   toggleBtn.addEventListener("click", function () {
     chatPanel.classList.toggle("hidden");
     resizer.classList.toggle("hidden");
+    paperView.classList.toggle("scroll");
   });
 
   // Enable horizontal resizing
@@ -81,7 +86,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!isResizing) return;
 
     const container = document.querySelector(".container");
-    const paperView = document.getElementById("paper-view");
 
     const offsetRight = container.clientWidth - e.clientX;
     chatPanel.style.width = `${offsetRight}px`;
@@ -113,24 +117,24 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Auto read + summarize
-  const paperView = document.getElementById("paper-view");
   if (paperView) {
-    const paperText = paperView.innerText.trim();
-    console.log("Auto-read content:", paperText.slice(0, 50) + "...");
-    preloadPaperSummary(paperText);
+    preloadPaperSummaryWithPDFJS();
+    // preloadPaperSummary();
+    // console.log("Auto-read content:", preloadSummary);
   }
 });
 
-async function preloadPaperSummary(paperText) {
+async function preloadPaperSummary() {
   try {
-    const prompt =
-      `Summarize the following document so I can use the summary as context later:\n\n"""${paperText}"""`;
+    let url = preloadSummary
 
-    const response = await fetch("http://localhost:3000/api/chat", {
+    const response = await fetch("http://localhost:3000/api/inittrain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: prompt })
+      body: JSON.stringify({ message: url })
     });
+
+    console.log(response)
 
     const data = await response.json();
     preloadSummary = data.reply;
@@ -142,6 +146,67 @@ async function preloadPaperSummary(paperText) {
 
   } catch (err) {
     console.error("Error summarizing paper:", err);
+    summaryResolve();
+  }
+}
+
+async function loader() {
+   let pdf = document.getElementById('pdf');
+   pdf.src = sessionStorage.getItem('activePdfUrl') + "#toolbar=0&navpanes=0&scrollbar=0";
+}
+
+async function preloadPaperSummaryWithPDFJS() {
+  try {
+    let url = sessionStorage.getItem('activePdfUrl');
+    
+    if (!url) {
+      console.error('No PDF URL found');
+      summaryResolve();
+      return;
+    }
+    console.log('Extracting PDF content...');
+    if (!pdfjsLib) {
+      const module = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs');
+      pdfjsLib = module;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs';
+    }
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+    const pdf = await loadingTask.promise;
+    
+    console.log(`PDF loaded: ${pdf.numPages} pages`);
+
+    let fullDocumentText = '';
+    const maxPages = Math.min(pdf.numPages, 50);
+    
+    for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+      try {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        let pageText = '';
+        textContent.items.forEach(item => {
+          pageText += item.str + ' ';
+        });
+        
+        fullDocumentText += `\n\n--- PAGE ${pageNum}/${pdf.numPages} ---\n\n${pageText.trim()}\n`;
+        console.log(`Extracted page ${pageNum}/${maxPages}`);
+        
+      } catch (pageError) {
+        console.warn(`Skip page ${pageNum}:`, pageError);
+      }
+    }
+
+    preloadSummary = `🔬 COMPLETE RESEARCH PAPER (${pdf.numPages} pages):\n\n${fullDocumentText}\n\n[Full document extracted - ready for Q&A]`;
+    
+    pdf.destroy();
+    console.log('FULL PDF READY! Length:', preloadSummary.length);
+    summaryResolve();
+
+  } catch (err) {
+    console.error("PDF extraction failed:", err);
+    preloadSummary = "PDF text extraction unavailable - ask specific questions";
     summaryResolve();
   }
 }

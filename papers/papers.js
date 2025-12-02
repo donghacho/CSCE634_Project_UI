@@ -20,6 +20,12 @@ function renderPapers() {
     const card = document.createElement("div");
     card.className = "paper-card";
     card.textContent = title;
+
+    card.addEventListener('click', () => {
+      sessionStorage.setItem('title', title);
+      sessionStorage.setItem('activePdfUrl', 'https://arxiv.org/pdf/2506.17894') // we will populate the DOI/PDF links to view the paper here
+      window.location.href = '/reader/reader.html';
+    });
     container.appendChild(card);
   });
 
