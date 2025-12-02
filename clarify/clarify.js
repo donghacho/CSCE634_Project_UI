@@ -1,59 +1,95 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const nextButton = document.getElementById('go-to-results');
-  const sendBtn = document.getElementById("send-button");
-  const userInput = document.getElementById("user-input");
+let clarificationStep = 0;
+let maxClarifySteps = 5;
+let allUserAnswers = [];
+
+function appendMessage(role, text) {
   const chatLog = document.getElementById("chat-log");
+  const messageDiv = document.createElement("div");
+  messageDiv.textContent = `${role === "user" ? "You" : "AI"}: ${text}`;
+  messageDiv.style.margin = "10px 0";
+  messageDiv.style.color = role === "user" ? "#000" : "#007BFF";
+  chatLog.appendChild(messageDiv);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
 
-  const questions = [
-    "What kind of papers are you looking for? (e.g., survey, technical, application-based)",
-    "What domain are you interested in? (e.g., HCI, NLP, CV)",
-    "Do you prefer newer or more established papers?"
-  ];
-  let questionIndex = 0;
+async function sendToBackend(message) {
+  try {
+    const response = await fetch("http://localhost:3000/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
 
-  const appendMessage = (sender, message) => {
-    if (!chatLog) return;
-    const msg = document.createElement("div");
-    msg.innerHTML = `<strong>${sender}:</strong> ${message}`;
-    chatLog.appendChild(msg);
-    chatLog.scrollTop = chatLog.scrollHeight;
-  };
+    const data = await response.json();
+    return data.reply || "[No response]";
+  } catch (error) {
+    console.error("Error:", error);
+    return "[Server error]";
+  }
+}
 
-  const askNextQuestion = () => {
-    if (questionIndex < questions.length) {
-      appendMessage("AI", questions[questionIndex]);
-      questionIndex++;
-    } else {
-      appendMessage("AI", "Great! Based on your answers, we’re preparing your paper recommendations...");
-      setTimeout(() => {
-        window.location.href = "../papers/papers.html";
-      }, 1500); // simulate delay
+async function sendClarificationPrompt() {
+  const query = localStorage.getItem("userQuery") || "[No query found]";
+  let prompt = "";
+
+  if (clarificationStep === 0) {
+    prompt = `A user is searching for a research paper with this query: "${query}". 
+Ask one helpful clarifying question to understand what they really need. 
+For example: Are they new to the area? Do they want a broad intro, a survey, or deep research? 
+If you think you're ready to show relevant papers based on their input, say: 
+"Got it! I’ll now show you some papers that match your interest."`;
+  } else {
+    const history = allUserAnswers.map((ans, i) => `Q${i + 1}: ${ans}`).join("\n");
+    prompt = `Here is what the user said so far:\n${history}
+
+Ask ONE more helpful question *only if needed* to refine what papers to recommend. 
+If you're confident, say: "Got it! I’ll now show you some papers that match your interest."`;
+  }
+
+  const reply = await sendToBackend(prompt);
+  appendMessage("ai", reply);
+
+  if (reply.toLowerCase().includes("show you some papers")) {
+    // Store answers and move to papers page
+    localStorage.setItem("clarificationAnswers", JSON.stringify(allUserAnswers));
+    window.location.href = "../papers/papers.html";
+  }
+}
+
+async function handleUserInput() {
+  const input = document.getElementById("user-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  appendMessage("user", message);
+  input.value = "";
+  allUserAnswers.push(message);
+  clarificationStep++;
+
+  if (clarificationStep < maxClarifySteps) {
+    await sendClarificationPrompt();
+  } else {
+    // Max questions reached store and redirect
+    localStorage.setItem("clarificationAnswers", JSON.stringify(allUserAnswers));
+    window.location.href = "../papers/papers.html";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  sendClarificationPrompt();
+
+  const input = document.getElementById("user-input");
+  const button = document.getElementById("send-button");
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleUserInput();
     }
-  };
+  });
 
-  if (sendBtn && userInput) {
-    sendBtn.addEventListener("click", () => {
-      const message = userInput.value.trim();
-      if (!message) return;
-      appendMessage("You", message);
-      userInput.value = "";
-      setTimeout(() => {
-        askNextQuestion();
-      }, 500);
-    });
-
-    userInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendBtn.click();
-    });
-  }
-
-  if (nextButton) {
-    nextButton.addEventListener("click", () => {
-      window.location.href = "../papers/papers.html";
-    });
-  }
-
-  // Initial message
-  appendMessage("AI", "Hi! Let me ask you a few quick questions to better match your research needs.");
-  askNextQuestion();
+  button.addEventListener("click", (e) => {
+    e.preventDefault();
+    handleUserInput();
+  });
 });
