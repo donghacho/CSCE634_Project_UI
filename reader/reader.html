@@ -1,59 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Paper Reader</title>
-  <link rel="stylesheet" href="reader.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs" type="module"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reader Page</title>
+  <link rel="stylesheet" href="reader.css">
 </head>
 <body>
+
   <div class="top-bar">
     <button id="toggle-chat">Chat</button>
   </div>
 
   <div class="container">
-    <!-- <div class="paper-view" id="paper-view">
-      <h2>Paper Title</h2>
-      <p>Once upon a time there were three little pigs. One pig
-built a house of straw while the second pig built his
-house with sticks. They built their houses very quickly
-and then sang and danced all day because they were
-lazy. The third little pig worked hard all day and built
-his house with bricks.
-A big bad wolf saw the two little pigs while they danced
-and played and thought, “What juicy tender meals they
-will make!” He chased the two pigs and they ran and
-hid in their houses. The big bad wolf went to the first
-house and huffed and puffed and blew the house down in minutes. The frightened little
-pig ran to the second pig’s house that was made of sticks. The big bad wolf now came to
-this house and huffed and puffed and blew the house down in hardly any time. Now, the
-two little pigs were terrified and ran to the third pig’s house that was made of bricks.
-The big bad wolf tried to huff and puff and blow the house down, but he could not. He
-kept trying for hours but the house was very strong and the little pigs were safe inside.
-He tried to enter through the chimney but the third little pig boiled a big pot of water
-and kept it below the chimney. The wolf fell into it and died.
-The two little pigs now felt sorry for having been so lazy. They too built their houses with
-bricks and lived happily ever after.</p>
-    </div> -->
-
-    <div class="paper-view" id="paper-view">
-        <iframe 
-            src=""
-            width="100%" 
-            height="100%"
-            style="border: none;"
-            title="Embedded Academic Paper"
-            id="pdf"
-            allowfullscreen>
-            <p>Your browser does not support iframes. Please download the PDF.</p>
-        </iframe>
+    <div class="paper-view">
+      <h1 id="paper-title">Paper Title</h1>
+      <h3 id="paper-authors">Authors: </h3>
+      <p id="paper-abstract"><strong>Abstract:</strong> </p>
+      <iframe id="pdf-frame" width="100%" height="600px" style="border: none;"></iframe>
     </div>
-
     <div class="resizer hidden" id="resizer"></div>
-
     <div class="chat-panel hidden" id="chat-panel">
-      <div class="chat-header">LLM Assistant</div>
+      <div class="chat-header">Personal Assistant</div>
       <div class="chat-box" id="chat-box"></div>
       <div class="chat-input">
         <input type="text" id="chat-input" placeholder="Ask a question..." />
@@ -61,8 +29,6 @@ bricks and lived happily ever after.</p>
       </div>
     </div>
   </div>
-
   <script src="reader.js"></script>
-  
 </body>
 </html>

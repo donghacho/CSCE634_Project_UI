@@ -12,10 +12,9 @@
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
     "marked": "^17.0.1",
-    "node-fetch": "^3.3.2",
-    "pdf2json": "^4.0.0"
+    "node-fetch": "^3.3.2"
   },
-  "author": "",
+  "contributors": ["Kuan Ruei Chiang, Ethan Tran, Samhitha Kondeti, William Kang, Sean Cho, Varenya Sri Mudumba"],
   "license": "ISC",
   "description": ""
 }

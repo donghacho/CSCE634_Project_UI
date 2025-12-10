@@ -6,11 +6,12 @@ body {
 }
 
 header {
-  background-color: #007BFF;
+  background-color: #500000;
   color: white;
-  padding: 20px;
+  padding: 40px 20px;
   text-align: center;
-  font-size: 24px;
+  font-size: 80px;
+  font-weight: bold;
 }
 
 main {
@@ -19,21 +20,6 @@ main {
   padding: 0 20px;
 }
 
-/* Paper card */
-.paper-card {
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.paper-card:hover {
-  cursor: pointer;
-}
-
-/* Pagination */
 #pagination button {
   padding: 8px 12px;
   margin: 0 3px;
@@ -51,3 +37,21 @@ main {
 #pagination button:hover {
   background-color: #ccc;
 }
+
+.paper-card {
+  background-color: #500000;
+  color: white;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.paper-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+}
+

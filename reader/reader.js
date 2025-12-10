@@ -1,212 +1,104 @@
-let preloadSummary = "";
-let hasInjectedSummary = false;
+document.addEventListener("DOMContentLoaded", () => {
+  const paper = JSON.parse(localStorage.getItem("selectedPaper"));
+  const titleEl = document.getElementById("paper-title");
+  const authorsEl = document.getElementById("paper-authors");
+  const abstractEl = document.getElementById("paper-abstract");
+  const pdfFrame = document.getElementById("pdf-frame");
 
-// A promise we resolve once summary is ready
-let summaryResolve;
-let summaryReady = new Promise(res => summaryResolve = res);
-let pdfjsLib = null; // PDF.js library reference
+  if (paper) {
+    titleEl.textContent = paper.title || "Untitled";
+    authorsEl.textContent = "Authors: " + (
+      Array.isArray(paper.authors) ? paper.authors.join(", ") : paper.authors
+    );
 
-async function sendMessage() {
-  // Wait until summary is actually loaded
-  await summaryReady;
+    if (paper.abstract && paper.abstract !== "No abstract available") {
+      abstractEl.innerHTML = "<strong>Abstract:</strong> " + paper.abstract;
+    } else {
+      abstractEl.textContent = "No abstract available";
+    }
 
-  const input = document.getElementById("chat-input");
-  const chatBox = document.getElementById("chat-box");
-  const message = input.value.trim();
-  if (message === "") return;
-
-  // Show user message
-  const userMsg = document.createElement("div");
-  userMsg.textContent = "You: " + message;
-  chatBox.appendChild(userMsg);
-
-  // Placeholder for AI message
-  const aiMsg = document.createElement("div");
-  aiMsg.style.marginTop = "10px";
-  aiMsg.style.color = "#007BFF";
-  aiMsg.textContent = "AI: [Waiting for response...]";
-  chatBox.appendChild(aiMsg);
-
-  chatBox.scrollTop = chatBox.scrollHeight;
-  input.value = "";
-
-  // Inject the summary ONLY on the first message
-  let finalMessage = message;
-
-  if (!hasInjectedSummary && preloadSummary.trim().length > 0) {
-    finalMessage =
-      `Here is the content the user is reading:\n\n"""${preloadSummary}"""\n\n` +
-      `Now answer the user's question:\n${message}`;
-
-    hasInjectedSummary = true;
+    const paperId = paper.paperId || "";
+    if (paperId) {
+      pdfFrame.src = `https://arxiv.org/pdf/${paperId}`;
+    }
   }
 
-  console.log("FINAL MESSAGE SENT TO BACKEND:\n", finalMessage);
-
-  try {
-    const response = await fetch("http://localhost:3000/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: finalMessage })
-    });
-
-    const data = await response.json();
-    aiMsg.innerHTML = "AI: " + data.reply;
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-  } catch (err) {
-    aiMsg.textContent = "AI: [Error getting response from backend]";
-    console.error("Frontend error:", err);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  const toggleBtn = document.getElementById("toggle-chat");
+  // Chat toggle
+  const toggleChatBtn = document.getElementById("toggle-chat");
   const chatPanel = document.getElementById("chat-panel");
   const resizer = document.getElementById("resizer");
-  const paperView = document.getElementById("paper-view");
 
-  loader();
-
-  toggleBtn.addEventListener("click", function () {
+  toggleChatBtn.addEventListener("click", () => {
     chatPanel.classList.toggle("hidden");
     resizer.classList.toggle("hidden");
-    paperView.classList.toggle("scroll");
   });
 
-  // Enable horizontal resizing
+  // Send message to server
+  const chatBox = document.getElementById("chat-box");
+  const chatInput = document.getElementById("chat-input");
+  const sendBtn = document.getElementById("send-btn");
+
+  sendBtn.addEventListener("click", async () => {
+    const userInput = chatInput.value.trim();
+    if (!userInput || !paper?.title) return;
+
+    // USER message bubble
+    const userMessage = document.createElement("div");
+    userMessage.classList.add("chat-message", "user");
+    userMessage.textContent = userInput;
+    chatBox.appendChild(userMessage);
+
+    chatInput.value = "";
+
+    try {
+      const response = await fetch("http://localhost:3000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `Paper title: ${paper.title}\n\nQuestion: ${userInput}`
+        })
+      });
+
+      const data = await response.json();
+
+      const botMessage = document.createElement("div");
+      botMessage.classList.add("chat-message", "bot");
+      botMessage.innerHTML = data.reply || "No answer received.";
+      chatBox.appendChild(botMessage);
+    } catch (error) {
+      const errorMsg = document.createElement("div");
+      errorMsg.classList.add("chat-message", "bot");
+      errorMsg.textContent = "Error contacting server.";
+      chatBox.appendChild(errorMsg);
+    }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+
+  chatInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendBtn.click();
+  });
+
+  const container = document.querySelector(".container");
   let isResizing = false;
 
-  resizer.addEventListener("mousedown", function () {
+  resizer.addEventListener("mousedown", () => {
     isResizing = true;
-    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
   });
 
-  window.addEventListener("mousemove", function (e) {
+  document.addEventListener("mousemove", (e) => {
     if (!isResizing) return;
 
-    const container = document.querySelector(".container");
-
-    const offsetRight = container.clientWidth - e.clientX;
-    chatPanel.style.width = `${offsetRight}px`;
-    paperView.style.width = `${container.clientWidth - offsetRight - 10}px`;
+    const containerRect = container.getBoundingClientRect();
+    const newChatWidth = containerRect.right - e.clientX;
+    if (newChatWidth > 250 && newChatWidth < containerRect.width * 0.7) {
+      chatPanel.style.width = `${newChatWidth}px`;
+    }
   });
 
-  window.addEventListener("mouseup", function () {
+  document.addEventListener("mouseup", () => {
     isResizing = false;
-    document.body.style.cursor = "default";
+    document.body.style.userSelect = "auto";
   });
-
-  // Enter key to send message
-  const chatInput = document.getElementById("chat-input");
-  if (chatInput) {
-    chatInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-  }
-
-  // Button send
-  const sendBtn = document.getElementById("send-btn");
-  if (sendBtn) {
-    sendBtn.addEventListener("click", function () {
-      sendMessage();
-    });
-  }
-
-  // Auto read + summarize
-  if (paperView) {
-    preloadPaperSummaryWithPDFJS();
-    // preloadPaperSummary();
-    // console.log("Auto-read content:", preloadSummary);
-  }
 });
-
-async function preloadPaperSummary() {
-  try {
-    let url = preloadSummary
-
-    const response = await fetch("http://localhost:3000/api/inittrain", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: url })
-    });
-
-    console.log(response)
-
-    const data = await response.json();
-    preloadSummary = data.reply;
-
-    console.log("Preload summary:", preloadSummary);
-
-    // Mark summary as ready
-    summaryResolve();
-
-  } catch (err) {
-    console.error("Error summarizing paper:", err);
-    summaryResolve();
-  }
-}
-
-async function loader() {
-   let pdf = document.getElementById('pdf');
-   pdf.src = sessionStorage.getItem('activePdfUrl') + "#toolbar=0&navpanes=0&scrollbar=0";
-}
-
-async function preloadPaperSummaryWithPDFJS() {
-  try {
-    let url = sessionStorage.getItem('activePdfUrl');
-    
-    if (!url) {
-      console.error('No PDF URL found');
-      summaryResolve();
-      return;
-    }
-    console.log('Extracting PDF content...');
-    if (!pdfjsLib) {
-      const module = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs');
-      pdfjsLib = module;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs';
-    }
-    const response = await fetch(url);
-    const arrayBuffer = await response.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument(arrayBuffer);
-    const pdf = await loadingTask.promise;
-    
-    console.log(`PDF loaded: ${pdf.numPages} pages`);
-
-    let fullDocumentText = '';
-    const maxPages = Math.min(pdf.numPages, 50);
-    
-    for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-      try {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        
-        let pageText = '';
-        textContent.items.forEach(item => {
-          pageText += item.str + ' ';
-        });
-        
-        fullDocumentText += `\n\n--- PAGE ${pageNum}/${pdf.numPages} ---\n\n${pageText.trim()}\n`;
-        console.log(`Extracted page ${pageNum}/${maxPages}`);
-        
-      } catch (pageError) {
-        console.warn(`Skip page ${pageNum}:`, pageError);
-      }
-    }
-
-    preloadSummary = `🔬 COMPLETE RESEARCH PAPER (${pdf.numPages} pages):\n\n${fullDocumentText}\n\n[Full document extracted - ready for Q&A]`;
-    
-    pdf.destroy();
-    console.log('FULL PDF READY! Length:', preloadSummary.length);
-    summaryResolve();
-
-  } catch (err) {
-    console.error("PDF extraction failed:", err);
-    preloadSummary = "PDF text extraction unavailable - ask specific questions";
-    summaryResolve();
-  }
-}

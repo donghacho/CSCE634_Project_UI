@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import fetch from "node-fetch"; // Needed for Node.js
+import fetch from "node-fetch";
 import { configDotenv } from "dotenv";
 import {marked} from 'marked'
 
@@ -21,11 +21,13 @@ if (!GEMINI_API_KEY) {
 app.use(cors());
 app.use(bodyParser.json());
 
+// API ENDPOINT
 app.post("/api/chat", async (req, res) => {
   const userMessage = req.body.message;
-  console.log("Received from frontend:", userMessage.substring(0, 100) + "..."); // Log a snippet
+  console.log("Received from frontend:", userMessage);
 
   try {
+    // Use correct Gemini 2.5 Flash model
     const apiURL =
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
@@ -42,38 +44,43 @@ app.post("/api/chat", async (req, res) => {
       })
     });
 
+    // Extract text safely
     const data = await response.json();
+    console.log("Gemini Response JSON:", JSON.stringify(data, null, 2));
 
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "[No reply received from Gemini]";
+    // Extract text safely & robustly
+    let reply = "[No reply received from Gemini]";
+
+    try {
+      if (Array.isArray(data?.candidates) && data.candidates.length > 0) {
+        const candidate = data.candidates[0];
+        const content = candidate.content;
+        let parts = null;
+        if (Array.isArray(content?.parts)) {
+          parts = content.parts;
+        } else if (Array.isArray(content) && Array.isArray(content[0]?.parts)) {
+          parts = content[0].parts;
+        }
+
+        if (Array.isArray(parts)) {
+          const textPart = parts.find(p => typeof p.text === "string");
+          if (textPart && typeof textPart.text === "string") {
+            reply = textPart.text;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error extracting reply from Gemini response:", e);
+    }
+
+    console.log("Reply to frontend:", reply);
 
     const htmlReply =  marked.parse(reply);
     res.json({ reply: htmlReply });
   } catch (err) {
-    console.error("Backend Error in /api/chat:", err);
+    console.error("Backend Error:", err);
     res.status(500).json({ reply: "[Backend error while reaching Gemini API]" });
   }
-});
-
-app.post("/api/inittrain", async (req, res) => {
-    try {
-        let pdfText = req.body.message;
-
-        let prompt =
-          `Summarize the following document so I can use the summary as context later:\n\n"""${pdfText}"""`;
-
-        let response = await fetch("http://localhost:3000/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: prompt })
-        });
-        const responseData = await response.json();
-        res.status(response.status).json(responseData);
-    } catch (error) {
-        console.error("Error in /api/inittrain:", error);
-        res.status(500).json({ reply: "Failed to process PDF or communicate with chat API." });
-    }
 });
 
 // START SERVER

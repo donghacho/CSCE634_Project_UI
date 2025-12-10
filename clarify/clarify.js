@@ -5,9 +5,9 @@ let allUserAnswers = [];
 function appendMessage(role, text) {
   const chatLog = document.getElementById("chat-log");
   const messageDiv = document.createElement("div");
-  messageDiv.textContent = `${role === "user" ? "You" : "AI"}: ${text}`;
+  messageDiv.innerHTML = `${role === "user" ? "You" : "AI"}: ${text}`;
   messageDiv.style.margin = "10px 0";
-  messageDiv.style.color = role === "user" ? "#000" : "#007BFF";
+  messageDiv.style.color = role === "user" ? "#500000" : "#001F3F";
   chatLog.appendChild(messageDiv);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
@@ -69,7 +69,7 @@ async function handleUserInput() {
   if (clarificationStep < maxClarifySteps) {
     await sendClarificationPrompt();
   } else {
-    // Max questions reached store and redirect
+    // Max questions reached store and move on
     localStorage.setItem("clarificationAnswers", JSON.stringify(allUserAnswers));
     window.location.href = "../papers/papers.html";
   }

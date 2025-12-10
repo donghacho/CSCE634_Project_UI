@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("search-form");
   const helpBtn = document.getElementById("help-btn");
 
-  // Submit on Enter key
+  // Submit when hitting enter
   if (input) {
     input.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Submit on button click
+  // Submit when clicking the button
   if (searchBtn) {
     searchBtn.addEventListener("click", function (e) {
       e.preventDefault();
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Optional Help Button
+  // Login Button
   if (helpBtn) {
     helpBtn.addEventListener("click", function (e) {
       e.preventDefault();
