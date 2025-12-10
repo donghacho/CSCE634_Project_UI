@@ -1,5 +1,6 @@
 # --- /model/app.py ---
 
+from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import torch
@@ -12,11 +13,11 @@ app = Flask(__name__)
 CORS(app)
 
 # Load paper metadata
-with open("paper_dataset.pkl", "rb") as f:
+with open(f"{Path(__file__).parent}/paper_dataset.pkl", "rb") as f:
     paper_data = pickle.load(f)
 
 # Load embedded vectors from dicts
-with open("encoded_papers_dataset.pkl", "rb") as f:
+with open(f"{Path(__file__).parent}/encoded_papers_dataset.pkl", "rb") as f:
     encoded_papers = pickle.load(f)
 
 # Extract and convert all 384-dim vectors
@@ -26,7 +27,7 @@ paper_vecs = F.normalize(paper_vecs, dim=1)
 
 # Load pretrained GNN model (still needed if you use it later)
 model = DeeperGraphSAGE(in_channels=384, hidden_channels=128, out_channels=64)
-model.load_state_dict(torch.load("graph_model.pt", map_location=torch.device("cpu")))
+model.load_state_dict(torch.load(f"{Path(__file__).parent}/graph_model.pt", map_location=torch.device("cpu")))
 model.eval()
 
 # Load BERT
